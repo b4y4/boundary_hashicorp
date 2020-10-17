@@ -30,13 +30,9 @@
   user:
     name: vagrant
     group: docker
-  register : task_result
 
-- name: Wait for the reboot to complete if there was a change.
-  wait_for_connection:
-    connect_timeout: 20
-    sleep: 5
-    delay: 5
-    timeout: 300
-#  when: task_result is changed
+- name: run boundary dev
+  shell: "(boundary dev -api-listen-address=192.168.4.2 >/dev/null 2>&1 &)"
+  async: 10
+  poll: 0
 
