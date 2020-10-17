@@ -1,0 +1,44 @@
+$script = <<-SCRIPT
+sudo apt-get install -y curl
+sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /etc/ssh/sshd_config    
+sudo service ssh restart
+#------- Docker --------
+sudo apt-get -y remove docker docker-engine docker.io containerd runc
+sudo apt-get -y update
+sudo apt-get -y install apt-transport-https ca-certificates gnupg-agent software-properties-common
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+sudo apt-get -y update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+sudo usermod -aG docker vagrant
+
+# ------ Boundary -------
+sudo curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+sudo apt-get -y update && sudo apt-get -y install boundary
+sudo reboot
+SCRIPT
+
+
+Vagrant.configure("2") do |config|
+ config.vm.box = "debian/buster64"
+ #config.vm.provision "shell", inline: $script
+
+
+config.vm.define "boundary", boundary: true do |server|
+ server.vm.hostname = "boundary"
+ server.vm.network "private_network", ip: "192.168.4.2"
+end
+  config.vm.provision "shell", inline: $script
+
+config.vm.define "target1" do |server|
+ server.vm.hostname = "target1"
+ server.vm.network "private_network", ip: "192.168.4.3"
+ end
+
+config.vm.define "target2" do |server|
+ server.vm.hostname = "target2"
+ server.vm.network "private_network", ip: "192.168.4.4"
+ end
+end

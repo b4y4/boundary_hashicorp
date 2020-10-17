@@ -1,0 +1,42 @@
+---
+- name: add an docker apt-key
+  apt_key:
+    id: 0EBFCD88
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: add an boundary apt-key
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: update apt repository
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+  with_items:
+    - deb [arch=amd64] https://download.docker.com/linux/debian buster stable
+    - deb [arch=amd64] https://apt.releases.hashicorp.com buster main
+
+- name: update and install boundary
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+    force: yes
+  with_items: ["apt-transport-https", "ca-certificates", "gnupg-agent", "software-properties-common", "curl", "docker-ce", "docker-ce-cli", "containerd.io", "boundary"]
+
+- name: add vagrant user to docker group
+  user:
+    name: vagrant
+    group: docker
+  register : task_result
+
+- name: Wait for the reboot to complete if there was a change.
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 300
+#  when: task_result is changed
+
